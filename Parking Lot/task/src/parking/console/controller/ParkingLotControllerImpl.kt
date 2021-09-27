@@ -21,7 +21,7 @@ class ParkingLotControllerImpl(
         )
         response.result.fold(
             {
-                println("${it.car!!.color} car parked in spot ${it.id}")
+                println("${it.car!!.color} car parked in spot ${it.id}.")
             },
             {
                 when (it) {
@@ -40,7 +40,7 @@ class ParkingLotControllerImpl(
         )
         response.result.fold(
             {
-                println("${command.spotId} is free")
+                println("Spot ${command.spotId} is free.")
             },
             {
                 when (it) {

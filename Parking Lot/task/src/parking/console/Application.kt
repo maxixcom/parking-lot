@@ -14,7 +14,7 @@ import parking.persistence.ParkingLotRegistry
 import parking.persistence.ParkingLotRegistryImpl
 
 object Application {
-    private val parkingLotRegistry: ParkingLotRegistry = ParkingLotRegistryImpl(2)
+    private val parkingLotRegistry: ParkingLotRegistry = ParkingLotRegistryImpl(20)
     private val parkingLotGateway: ParkingLotGateway = ParkingLotGatewayImpl(
         parkingLotRegistry = parkingLotRegistry
     )

@@ -20,13 +20,16 @@ class Runner {
                     is CommandPark -> parkingLotController.parkCar(command)
                     is CommandUnknown -> println("Unknown command! Try again.")
                 }
+                // TODO: only one command is processed for this step
+                break@main
             } while (command == CommandUnknown)
         }
-        println("Bye!")
+        // TODO: No bye at the moment
+//        println("Bye!")
     }
 
     private fun enterCommand(): Command {
-        print("> ")
+//        print("> ")
         return Application.commandFactory.commandFromString(readLine()!!)
     }
 }
