@@ -1,11 +1,8 @@
 package parking
 
+import parking.console.Runner
+
 fun main() {
-    println(
-        """
-        White car has parked.
-        Yellow car left the parking lot.
-        Green car just parked here.
-        """.trimIndent()
-    )
+    Runner()
+        .run()
 }
