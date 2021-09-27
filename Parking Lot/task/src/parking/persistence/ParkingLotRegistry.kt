@@ -3,5 +3,6 @@ package parking.persistence
 import parking.domain.entity.ParkingLot
 
 interface ParkingLotRegistry {
-    fun get(): ParkingLot
+    fun create(capacity: Int)
+    fun get(): ParkingLot?
 }

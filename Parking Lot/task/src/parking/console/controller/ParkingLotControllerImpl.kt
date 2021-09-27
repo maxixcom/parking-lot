@@ -1,16 +1,16 @@
 package parking.console.controller
 
+import parking.console.command.CommandCreate
 import parking.console.command.CommandLeave
 import parking.console.command.CommandPark
-import parking.domain.exception.NoCarException
-import parking.domain.exception.NoEmptySpotException
-import parking.domain.exception.SpotNotFoundException
+import parking.domain.usecase.CreateParkingLot
 import parking.domain.usecase.LeaveSpot
 import parking.domain.usecase.ParkCar
 
 class ParkingLotControllerImpl(
     val parkCar: ParkCar,
-    val leaveSpot: LeaveSpot
+    val leaveSpot: LeaveSpot,
+    val createParkingLot: CreateParkingLot,
 ) : ParkingLotController {
     override fun parkCar(command: CommandPark) {
         val response = parkCar.execute(
@@ -24,10 +24,7 @@ class ParkingLotControllerImpl(
                 println("${it.car!!.color} car parked in spot ${it.id}.")
             },
             {
-                when (it) {
-                    is NoEmptySpotException -> println(it.message)
-                    is Exception -> println("(!) Unknown error - ${it.message}")
-                }
+                println(it.message)
             }
         )
     }
@@ -43,11 +40,23 @@ class ParkingLotControllerImpl(
                 println("Spot ${command.spotId} is free.")
             },
             {
-                when (it) {
-                    is SpotNotFoundException -> println(it.message)
-                    is NoCarException -> println(it.message)
-                    is Exception -> println("(!) Unknown error - ${it.message}")
-                }
+                println(it.message)
+            }
+        )
+    }
+
+    override fun create(commandCreate: CommandCreate) {
+        val response = createParkingLot.execute(
+            CreateParkingLot.Request(
+                capacity = commandCreate.capacity
+            )
+        )
+        response.result.fold(
+            {
+                println("Created a parking lot with ${it.spots.size} spots.")
+            },
+            {
+                println(it.message)
             }
         )
     }

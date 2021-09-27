@@ -2,6 +2,7 @@ package parking.application.gateway
 
 import parking.domain.entity.Car
 import parking.domain.entity.Spot
+import parking.domain.exception.NotCreatedException
 import parking.domain.gateway.ParkingLotGateway
 import parking.persistence.ParkingLotRegistry
 
@@ -20,12 +21,12 @@ class ParkingLotGatewayImpl(
     }
 
     override fun findSpotById(id: Int): Spot? {
-        val parkingLot = parkingLotRegistry.get()
+        val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
         return parkingLot.spots.firstOrNull { it.id == id }
     }
 
     override fun findEmptySpot(): Spot? {
-        val parkingLot = parkingLotRegistry.get()
+        val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
         return parkingLot.spots.firstOrNull { it.car == null }
     }
 }

@@ -1,6 +1,7 @@
 package parking.console
 
 import parking.console.command.Command
+import parking.console.command.CommandCreate
 import parking.console.command.CommandExit
 import parking.console.command.CommandLeave
 import parking.console.command.CommandPark
@@ -18,10 +19,9 @@ class Runner {
                     CommandExit -> break@main
                     is CommandLeave -> parkingLotController.leaveSpot(command)
                     is CommandPark -> parkingLotController.parkCar(command)
+                    is CommandCreate -> parkingLotController.create(command)
                     is CommandUnknown -> println("Unknown command! Try again.")
                 }
-                // TODO: only one command is processed for this step
-                break@main
             } while (command == CommandUnknown)
         }
         // TODO: No bye at the moment

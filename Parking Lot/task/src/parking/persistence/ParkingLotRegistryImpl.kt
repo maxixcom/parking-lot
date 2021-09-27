@@ -2,8 +2,12 @@ package parking.persistence
 
 import parking.domain.entity.ParkingLot
 
-class ParkingLotRegistryImpl(capacity: Int) : ParkingLotRegistry {
-    private val parkingLot = ParkingLot(capacity)
+class ParkingLotRegistryImpl : ParkingLotRegistry {
+    private var instance: ParkingLot? = null
 
-    override fun get() = parkingLot
+    override fun create(capacity: Int) {
+        this.instance = ParkingLot(capacity)
+    }
+
+    override fun get() = instance
 }

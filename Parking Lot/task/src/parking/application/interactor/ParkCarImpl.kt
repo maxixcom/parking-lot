@@ -18,7 +18,7 @@ class ParkCarImpl(
                     )
                 }
                 spot
-            } ?: throw NoEmptySpotException("Sorry, the parking lot is full.")
+            } ?: throw NoEmptySpotException()
         }
         return ParkCar.Response(result)
     }
