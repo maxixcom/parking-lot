@@ -12,6 +12,8 @@ import parking.domain.gateway.ParkingLotGateway
 import parking.domain.usecase.CreateParkingLot
 import parking.domain.usecase.LeaveSpot
 import parking.domain.usecase.ParkCar
+import parking.domain.usecase.StatusParkingLot
+import parking.application.interactor.StatusParkingLotImpl
 import parking.persistence.ParkingLotRegistry
 import parking.persistence.ParkingLotRegistryImpl
 
@@ -33,11 +35,16 @@ object Application {
         parkingLotRegistry = parkingLotRegistry
     )
 
+    private val useCaseStatusParkingLot: StatusParkingLot = StatusParkingLotImpl(
+        parkingLotGateway = parkingLotGateway
+    )
+
     val commandFactory: CommandFactory = CommandFactoryImpl()
 
     val parkingLotController: ParkingLotController = ParkingLotControllerImpl(
         parkCar = useCaseParkCar,
         leaveSpot = useCaseLeaveSpot,
-        createParkingLot = useCaseCreateParkingLot
+        createParkingLot = useCaseCreateParkingLot,
+        statusParkingLot = useCaseStatusParkingLot,
     )
 }

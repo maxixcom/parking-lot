@@ -2,6 +2,7 @@ package parking.console.command
 
 class CommandFactoryImpl : CommandFactory {
     private val commands: List<(String) -> Command?> = listOf(
+        { input -> parseStatus(input) },
         { input -> parseCreate(input) },
         { input -> parsePark(input) },
         { input -> parseLeave(input) },
@@ -9,6 +10,12 @@ class CommandFactoryImpl : CommandFactory {
     )
 
     override fun commandFromString(input: String) = commands.firstNotNullOfOrNull { it(input) } ?: CommandUnknown
+
+    private fun parseStatus(input: String): Command? {
+        return "^status$".toRegex().matchEntire(input)?.let {
+            CommandStatus
+        }
+    }
 
     private fun parseCreate(input: String): Command? {
         return "^create\\s+(?<capacity>\\d+)$".toRegex().matchEntire(input)?.let {

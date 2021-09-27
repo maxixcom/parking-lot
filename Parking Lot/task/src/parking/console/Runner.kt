@@ -5,6 +5,7 @@ import parking.console.command.CommandCreate
 import parking.console.command.CommandExit
 import parking.console.command.CommandLeave
 import parking.console.command.CommandPark
+import parking.console.command.CommandStatus
 import parking.console.command.CommandUnknown
 
 class Runner {
@@ -20,6 +21,7 @@ class Runner {
                     is CommandLeave -> parkingLotController.leaveSpot(command)
                     is CommandPark -> parkingLotController.parkCar(command)
                     is CommandCreate -> parkingLotController.create(command)
+                    is CommandStatus -> parkingLotController.status(command)
                     is CommandUnknown -> println("Unknown command! Try again.")
                 }
             } while (command == CommandUnknown)

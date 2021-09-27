@@ -8,4 +8,5 @@ interface ParkingLotGateway {
     fun leave(spot: Spot): Car?
     fun findSpotById(id: Int): Spot?
     fun findEmptySpot(): Spot?
+    fun findBusySpots(): List<Spot>
 }

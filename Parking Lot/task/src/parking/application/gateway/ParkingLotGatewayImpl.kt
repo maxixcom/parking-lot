@@ -29,4 +29,9 @@ class ParkingLotGatewayImpl(
         val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
         return parkingLot.spots.firstOrNull { it.car == null }
     }
+
+    override fun findBusySpots(): List<Spot> {
+        val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
+        return parkingLot.spots.filter { it.car != null }.sortedBy { it.id }
+    }
 }
