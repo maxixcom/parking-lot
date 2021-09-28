@@ -1,2 +1,7 @@
 content:
 - Working with strings
+- Errors in programs
+- What is an exception
+- Hierarchy of exceptions
+- Taming exceptions
+- The try-catch statement

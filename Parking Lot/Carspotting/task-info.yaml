@@ -182,6 +182,608 @@ files:
         }
     }
   learner_created: false
+- name: src/parking/domain/entity/Car.kt
+  visible: true
+  text: |
+    package parking.domain.entity
+
+    data class Car(
+        val regNumber: String,
+        val color: String,
+    )
+  learner_created: true
+- name: src/parking/console/command/CommandFactoryImpl.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    class CommandFactoryImpl : CommandFactory {
+        private val commands: List<(String) -> Command?> = listOf(
+            { input -> parseStatus(input) },
+            { input -> parseCreate(input) },
+            { input -> parsePark(input) },
+            { input -> parseLeave(input) },
+            { input -> parseExit(input) },
+        )
+
+        override fun commandFromString(input: String) = commands.firstNotNullOfOrNull { it(input) } ?: CommandUnknown
+
+        private fun parseStatus(input: String): Command? {
+            return "^status$".toRegex().matchEntire(input)?.let {
+                CommandStatus
+            }
+        }
+
+        private fun parseCreate(input: String): Command? {
+            return "^create\\s+(?<capacity>\\d+)$".toRegex().matchEntire(input)?.let {
+                CommandCreate(
+                    capacity = it.groups["capacity"]!!.value.toInt(),
+                )
+            }
+        }
+
+        private fun parsePark(input: String): Command? {
+            return "^park\\s+(?<regNumber>[\\w-]+)\\s+(?<color>\\w+)$".toRegex().matchEntire(input)?.let {
+                CommandPark(
+                    regNumber = it.groups["regNumber"]!!.value,
+                    color = it.groups["color"]!!.value,
+                )
+            }
+        }
+
+        private fun parseLeave(input: String): Command? {
+            return "^leave\\s+(?<slotId>\\d+)$".toRegex().matchEntire(input)?.let {
+                CommandLeave(it.groups["slotId"]!!.value.toInt())
+            }
+        }
+
+        private fun parseExit(input: String): Command? {
+            return "^exit$".toRegex().matchEntire(input)?.let {
+                CommandExit
+            }
+        }
+    }
+  learner_created: true
+- name: src/parking/domain/entity/Spot.kt
+  visible: true
+  text: |
+    package parking.domain.entity
+
+    data class Spot(
+        val id: Int,
+        var car: Car? = null,
+    )
+  learner_created: true
+- name: src/parking/console/command/CommandExit.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    object CommandExit : Command
+  learner_created: true
+- name: src/parking/console/command/CommandCreate.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    class CommandCreate(val capacity: Int) : Command
+  learner_created: true
+- name: src/parking/domain/usecase/CreateParkingLot.kt
+  visible: true
+  text: |
+    package parking.domain.usecase
+
+    import parking.domain.entity.ParkingLot
+
+    interface CreateParkingLot {
+        fun execute(request: Request): Response
+
+        data class Request(val capacity: Int)
+        data class Response(val result: Result<ParkingLot>)
+    }
+  learner_created: true
+- name: src/parking/domain/entity/ParkingLot.kt
+  visible: true
+  text: |
+    package parking.domain.entity
+
+    class ParkingLot(capacity: Int) {
+        val spots = List(capacity) { Spot(it + 1) }
+    }
+  learner_created: true
+- name: src/parking/domain/exception/SpotNotFoundException.kt
+  visible: true
+  text: |
+    package parking.domain.exception
+
+    class SpotNotFoundException(message: String) : Exception(message)
+  learner_created: true
+- name: src/parking/console/command/Command.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    sealed interface Command
+  learner_created: true
+- name: src/parking/application/interactor/StatusParkingLotImpl.kt
+  visible: true
+  text: |
+    package parking.application.interactor
+
+    import parking.domain.gateway.ParkingLotGateway
+    import parking.domain.usecase.StatusParkingLot
+
+    class StatusParkingLotImpl(
+        private val parkingLotGateway: ParkingLotGateway
+    ) : StatusParkingLot {
+        override fun execute(): StatusParkingLot.Response {
+            val result = kotlin.runCatching {
+                parkingLotGateway.findBusySpots()
+            }
+            return StatusParkingLot.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/parking/console/command/CommandUnknown.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    object CommandUnknown : Command
+  learner_created: true
+- name: src/parking/application/interactor/CreateParkingLotImpl.kt
+  visible: true
+  text: |
+    package parking.application.interactor
+
+    import parking.domain.usecase.CreateParkingLot
+    import parking.persistence.ParkingLotRegistry
+
+    class CreateParkingLotImpl(
+        private val parkingLotRegistry: ParkingLotRegistry
+    ) : CreateParkingLot {
+        override fun execute(request: CreateParkingLot.Request): CreateParkingLot.Response {
+            val result = kotlin.runCatching {
+                parkingLotRegistry.create(request.capacity)
+                parkingLotRegistry.get()!!
+            }
+            return CreateParkingLot.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/parking/console/Runner.kt
+  visible: true
+  text: |
+    package parking.console
+
+    import parking.console.command.Command
+    import parking.console.command.CommandCreate
+    import parking.console.command.CommandExit
+    import parking.console.command.CommandLeave
+    import parking.console.command.CommandPark
+    import parking.console.command.CommandStatus
+    import parking.console.command.CommandUnknown
+
+    class Runner {
+        private val commandFactory = Application.commandFactory
+        private val parkingLotController = Application.parkingLotController
+
+        fun run() {
+            main@ while (true) {
+                do {
+                    val command = enterCommand()
+                    when (command) {
+                        CommandExit -> break@main
+                        is CommandLeave -> parkingLotController.leaveSpot(command)
+                        is CommandPark -> parkingLotController.parkCar(command)
+                        is CommandCreate -> parkingLotController.create(command)
+                        is CommandStatus -> parkingLotController.status(command)
+                        is CommandUnknown -> println("Unknown command! Try again.")
+                    }
+                } while (command == CommandUnknown)
+            }
+            // TODO: No bye at the moment
+    //        println("Bye!")
+        }
+
+        private fun enterCommand(): Command {
+    //        print("> ")
+            return Application.commandFactory.commandFromString(readLine()!!)
+        }
+    }
+  learner_created: true
+- name: src/parking/domain/exception/NoEmptySpotException.kt
+  visible: true
+  text: |
+    package parking.domain.exception
+
+    class NoEmptySpotException(message: String = "Sorry, the parking lot is full.") : Exception(message)
+  learner_created: true
+- name: src/parking/domain/usecase/LeaveSpot.kt
+  visible: true
+  text: |
+    package parking.domain.usecase
+
+    import parking.domain.entity.Car
+
+    interface LeaveSpot {
+        fun execute(request: Request): Response
+
+        data class Request(val spotId: Int)
+        data class Response(val result: Result<Car>)
+    }
+  learner_created: true
+- name: src/parking/application/gateway/ParkingLotGatewayImpl.kt
+  visible: true
+  text: |
+    package parking.application.gateway
+
+    import parking.domain.entity.Car
+    import parking.domain.entity.Spot
+    import parking.domain.exception.NotCreatedException
+    import parking.domain.gateway.ParkingLotGateway
+    import parking.persistence.ParkingLotRegistry
+
+    class ParkingLotGatewayImpl(
+        private val parkingLotRegistry: ParkingLotRegistry
+    ) : ParkingLotGateway {
+        override fun park(car: Car, spot: Spot): Spot {
+            spot.car = car
+            return spot
+        }
+
+        override fun leave(spot: Spot): Car? {
+            val car = spot.car
+            spot.car = null
+            return car
+        }
+
+        override fun findSpotById(id: Int): Spot? {
+            val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
+            return parkingLot.spots.firstOrNull { it.id == id }
+        }
+
+        override fun findEmptySpot(): Spot? {
+            val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
+            return parkingLot.spots.firstOrNull { it.car == null }
+        }
+
+        override fun findBusySpots(): List<Spot> {
+            val parkingLot = parkingLotRegistry.get() ?: throw NotCreatedException()
+            return parkingLot.spots.filter { it.car != null }.sortedBy { it.id }
+        }
+    }
+  learner_created: true
+- name: src/parking/console/controller/ParkingLotControllerImpl.kt
+  visible: true
+  text: |
+    package parking.console.controller
+
+    import parking.console.command.CommandCreate
+    import parking.console.command.CommandLeave
+    import parking.console.command.CommandPark
+    import parking.console.command.CommandStatus
+    import parking.domain.usecase.CreateParkingLot
+    import parking.domain.usecase.LeaveSpot
+    import parking.domain.usecase.ParkCar
+    import parking.domain.usecase.StatusParkingLot
+
+    class ParkingLotControllerImpl(
+        val parkCar: ParkCar,
+        val leaveSpot: LeaveSpot,
+        val createParkingLot: CreateParkingLot,
+        val statusParkingLot: StatusParkingLot,
+    ) : ParkingLotController {
+        override fun parkCar(command: CommandPark) {
+            val response = parkCar.execute(
+                ParkCar.Request(
+                    regNumber = command.regNumber,
+                    color = command.color
+                )
+            )
+            response.result.fold(
+                {
+                    println("${it.car!!.color} car parked in spot ${it.id}.")
+                },
+                {
+                    println(it.message)
+                }
+            )
+        }
+
+        override fun leaveSpot(command: CommandLeave) {
+            val response = leaveSpot.execute(
+                LeaveSpot.Request(
+                    spotId = command.spotId,
+                )
+            )
+            response.result.fold(
+                {
+                    println("Spot ${command.spotId} is free.")
+                },
+                {
+                    println(it.message)
+                }
+            )
+        }
+
+        override fun create(command: CommandCreate) {
+            val response = createParkingLot.execute(
+                CreateParkingLot.Request(
+                    capacity = command.capacity
+                )
+            )
+            response.result.fold(
+                {
+                    println("Created a parking lot with ${it.spots.size} spots.")
+                },
+                {
+                    println(it.message)
+                }
+            )
+        }
+
+        override fun status(command: CommandStatus) {
+            val response = statusParkingLot.execute()
+            response.result.fold(
+                { list ->
+                    if (list.isEmpty()) {
+                        println("Parking lot is empty.")
+                    } else {
+                        list.forEach { spot ->
+                            spot.car?.let { car ->
+                                println("${spot.id} ${car.regNumber} ${car.color}")
+                            }
+                        }
+                    }
+                },
+                {
+                    println(it.message)
+                }
+            )
+        }
+    }
+  learner_created: true
+- name: src/parking/domain/exception/NotCreatedException.kt
+  visible: true
+  text: |
+    package parking.domain.exception
+
+    class NotCreatedException(message: String = "Sorry, a parking lot has not been created.") : Exception(message)
+  learner_created: true
+- name: src/parking/application/interactor/ParkCarImpl.kt
+  visible: true
+  text: |
+    package parking.application.interactor
+
+    import parking.domain.entity.Car
+    import parking.domain.exception.NoEmptySpotException
+    import parking.domain.gateway.ParkingLotGateway
+    import parking.domain.usecase.ParkCar
+
+    class ParkCarImpl(
+        private val parkingLotGateway: ParkingLotGateway
+    ) : ParkCar {
+        override fun execute(request: ParkCar.Request): ParkCar.Response {
+            val result = kotlin.runCatching {
+                parkingLotGateway.findEmptySpot()?.let { spot ->
+                    spot.car = with(request) {
+                        Car(
+                            regNumber = regNumber,
+                            color = color
+                        )
+                    }
+                    spot
+                } ?: throw NoEmptySpotException()
+            }
+            return ParkCar.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/parking/persistence/ParkingLotRegistry.kt
+  visible: true
+  text: |
+    package parking.persistence
+
+    import parking.domain.entity.ParkingLot
+
+    interface ParkingLotRegistry {
+        fun create(capacity: Int)
+        fun get(): ParkingLot?
+    }
+  learner_created: true
+- name: src/parking/domain/usecase/ParkCar.kt
+  visible: true
+  text: |
+    package parking.domain.usecase
+
+    import parking.domain.entity.Spot
+
+    interface ParkCar {
+        fun execute(request: Request): Response
+
+        data class Request(val regNumber: String, val color: String)
+        data class Response(val result: Result<Spot>)
+    }
+  learner_created: true
+- name: src/parking/console/command/CommandPark.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    class CommandPark(val regNumber: String, val color: String) : Command
+  learner_created: true
+- name: src/parking/application/interactor/LeaveSpotImpl.kt
+  visible: true
+  text: |
+    package parking.application.interactor
+
+    import parking.domain.exception.NoCarException
+    import parking.domain.exception.SpotNotFoundException
+    import parking.domain.gateway.ParkingLotGateway
+    import parking.domain.usecase.LeaveSpot
+
+    class LeaveSpotImpl(
+        private val parkingLotGateway: ParkingLotGateway
+    ) : LeaveSpot {
+        override fun execute(request: LeaveSpot.Request): LeaveSpot.Response {
+            val result = kotlin.runCatching {
+                val spot = parkingLotGateway.findSpotById(request.spotId)
+                    ?: throw SpotNotFoundException("Spot ${request.spotId} is not found on the parking lot")
+                spot.car ?: throw NoCarException("There is no car in spot ${request.spotId}.")
+
+                parkingLotGateway.leave(spot)!!
+            }
+            return LeaveSpot.Response(result)
+        }
+    }
+  learner_created: true
+- name: src/parking/domain/exception/NoCarException.kt
+  visible: true
+  text: |
+    package parking.domain.exception
+
+    class NoCarException(message: String) : Exception(message)
+  learner_created: true
+- name: src/parking/persistence/ParkingLotRegistryImpl.kt
+  visible: true
+  text: |
+    package parking.persistence
+
+    import parking.domain.entity.ParkingLot
+
+    class ParkingLotRegistryImpl : ParkingLotRegistry {
+        private var instance: ParkingLot? = null
+
+        override fun create(capacity: Int) {
+            this.instance = ParkingLot(capacity)
+        }
+
+        override fun get() = instance
+    }
+  learner_created: true
+- name: src/parking/console/command/CommandStatus.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    object CommandStatus : Command
+  learner_created: true
+- name: src/parking/console/Application.kt
+  visible: true
+  text: |
+    package parking.console
+
+    import parking.application.gateway.ParkingLotGatewayImpl
+    import parking.application.interactor.CreateParkingLotImpl
+    import parking.application.interactor.LeaveSpotImpl
+    import parking.application.interactor.ParkCarImpl
+    import parking.console.command.CommandFactory
+    import parking.console.command.CommandFactoryImpl
+    import parking.console.controller.ParkingLotController
+    import parking.console.controller.ParkingLotControllerImpl
+    import parking.domain.gateway.ParkingLotGateway
+    import parking.domain.usecase.CreateParkingLot
+    import parking.domain.usecase.LeaveSpot
+    import parking.domain.usecase.ParkCar
+    import parking.domain.usecase.StatusParkingLot
+    import parking.application.interactor.StatusParkingLotImpl
+    import parking.persistence.ParkingLotRegistry
+    import parking.persistence.ParkingLotRegistryImpl
+
+    object Application {
+        private val parkingLotRegistry: ParkingLotRegistry = ParkingLotRegistryImpl()
+        private val parkingLotGateway: ParkingLotGateway = ParkingLotGatewayImpl(
+            parkingLotRegistry = parkingLotRegistry
+        )
+
+        private val useCaseLeaveSpot: LeaveSpot = LeaveSpotImpl(
+            parkingLotGateway = parkingLotGateway
+        )
+
+        private val useCaseParkCar: ParkCar = ParkCarImpl(
+            parkingLotGateway = parkingLotGateway
+        )
+
+        private val useCaseCreateParkingLot: CreateParkingLot = CreateParkingLotImpl(
+            parkingLotRegistry = parkingLotRegistry
+        )
+
+        private val useCaseStatusParkingLot: StatusParkingLot = StatusParkingLotImpl(
+            parkingLotGateway = parkingLotGateway
+        )
+
+        val commandFactory: CommandFactory = CommandFactoryImpl()
+
+        val parkingLotController: ParkingLotController = ParkingLotControllerImpl(
+            parkCar = useCaseParkCar,
+            leaveSpot = useCaseLeaveSpot,
+            createParkingLot = useCaseCreateParkingLot,
+            statusParkingLot = useCaseStatusParkingLot,
+        )
+    }
+  learner_created: true
+- name: src/parking/console/controller/ParkingLotController.kt
+  visible: true
+  text: |
+    package parking.console.controller
+
+    import parking.console.command.CommandCreate
+    import parking.console.command.CommandLeave
+    import parking.console.command.CommandPark
+    import parking.console.command.CommandStatus
+
+    interface ParkingLotController {
+        fun parkCar(command: CommandPark)
+        fun leaveSpot(command: CommandLeave)
+        fun create(command: CommandCreate)
+        fun status(command: CommandStatus)
+    }
+  learner_created: true
+- name: src/parking/domain/usecase/StatusParkingLot.kt
+  visible: true
+  text: |
+    package parking.domain.usecase
+
+    import parking.domain.entity.Spot
+
+    interface StatusParkingLot {
+        fun execute(): Response
+        data class Response(val result: Result<List<Spot>>)
+    }
+  learner_created: true
+- name: src/parking/console/command/CommandLeave.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    class CommandLeave(val spotId: Int) : Command
+  learner_created: true
+- name: src/parking/console/command/CommandFactory.kt
+  visible: true
+  text: |
+    package parking.console.command
+
+    interface CommandFactory {
+        fun commandFromString(input: String): Command
+    }
+  learner_created: true
+- name: src/parking/domain/gateway/ParkingLotGateway.kt
+  visible: true
+  text: |
+    package parking.domain.gateway
+
+    import parking.domain.entity.Car
+    import parking.domain.entity.Spot
+
+    interface ParkingLotGateway {
+        fun park(car: Car, spot: Spot): Spot
+        fun leave(spot: Spot): Car?
+        fun findSpotById(id: Int): Spot?
+        fun findEmptySpot(): Spot?
+        fun findBusySpots(): List<Spot>
+    }
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/75/stages/420/implement#comment
 status: Unchecked
 record: -1
