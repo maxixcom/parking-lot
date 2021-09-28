@@ -9,4 +9,7 @@ interface ParkingLotGateway {
     fun findSpotById(id: Int): Spot?
     fun findEmptySpot(): Spot?
     fun findBusySpots(): List<Spot>
+
+    fun findSpotByCarColor(color: String): List<Spot>
+    fun findSpotByCarRegNumber(regNumber: String): List<Spot>
 }

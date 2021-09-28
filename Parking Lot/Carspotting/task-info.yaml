@@ -784,6 +784,18 @@ files:
         fun findBusySpots(): List<Spot>
     }
   learner_created: true
+- name: src/parking/domain/usecase/SpotByColor.kt
+  visible: true
+  learner_created: true
+- name: src/parking/domain/usecase/RegByColorImpl.kt
+  visible: true
+  learner_created: true
+- name: src/parking/domain/usecase/SpotByColorImpl.kt
+  visible: true
+  learner_created: true
+- name: src/parking/domain/usecase/SpotByRegImpl.kt
+  visible: true
+  learner_created: true
 feedback_link: https://hyperskill.org/projects/75/stages/420/implement#comment
 status: Unchecked
 record: -1

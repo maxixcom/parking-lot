@@ -4,6 +4,10 @@ import parking.application.gateway.ParkingLotGatewayImpl
 import parking.application.interactor.CreateParkingLotImpl
 import parking.application.interactor.LeaveSpotImpl
 import parking.application.interactor.ParkCarImpl
+import parking.application.interactor.RegByColorImpl
+import parking.application.interactor.SpotByColorImpl
+import parking.application.interactor.SpotByRegImpl
+import parking.application.interactor.StatusParkingLotImpl
 import parking.console.command.CommandFactory
 import parking.console.command.CommandFactoryImpl
 import parking.console.controller.ParkingLotController
@@ -12,8 +16,10 @@ import parking.domain.gateway.ParkingLotGateway
 import parking.domain.usecase.CreateParkingLot
 import parking.domain.usecase.LeaveSpot
 import parking.domain.usecase.ParkCar
+import parking.domain.usecase.RegByColor
+import parking.domain.usecase.SpotByColor
+import parking.domain.usecase.SpotByReg
 import parking.domain.usecase.StatusParkingLot
-import parking.application.interactor.StatusParkingLotImpl
 import parking.persistence.ParkingLotRegistry
 import parking.persistence.ParkingLotRegistryImpl
 
@@ -39,6 +45,18 @@ object Application {
         parkingLotGateway = parkingLotGateway
     )
 
+    private val useCaseRegByColor: RegByColor = RegByColorImpl(
+        parkingLotGateway = parkingLotGateway
+    )
+
+    private val useCaseSpotByColor: SpotByColor = SpotByColorImpl(
+        parkingLotGateway = parkingLotGateway
+    )
+
+    private val useCaseSpotByReg: SpotByReg = SpotByRegImpl(
+        parkingLotGateway = parkingLotGateway
+    )
+
     val commandFactory: CommandFactory = CommandFactoryImpl()
 
     val parkingLotController: ParkingLotController = ParkingLotControllerImpl(
@@ -46,5 +64,8 @@ object Application {
         leaveSpot = useCaseLeaveSpot,
         createParkingLot = useCaseCreateParkingLot,
         statusParkingLot = useCaseStatusParkingLot,
+        regByColor = useCaseRegByColor,
+        spotByColor = useCaseSpotByColor,
+        spotByReg = useCaseSpotByReg,
     )
 }

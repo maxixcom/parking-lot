@@ -7,6 +7,9 @@ class CommandFactoryImpl : CommandFactory {
         { input -> parsePark(input) },
         { input -> parseLeave(input) },
         { input -> parseExit(input) },
+        { input -> parseRegByColor(input) },
+        { input -> parseSpotByColor(input) },
+        { input -> parseSpotByReg(input) },
     )
 
     override fun commandFromString(input: String) = commands.firstNotNullOfOrNull { it(input) } ?: CommandUnknown
@@ -43,6 +46,30 @@ class CommandFactoryImpl : CommandFactory {
     private fun parseExit(input: String): Command? {
         return "^exit$".toRegex().matchEntire(input)?.let {
             CommandExit
+        }
+    }
+
+    private fun parseRegByColor(input: String): Command? {
+        return "^reg_by_color\\s+(?<color>\\w+)$".toRegex().matchEntire(input)?.let {
+            CommandRegByColor(
+                color = it.groups["color"]!!.value,
+            )
+        }
+    }
+
+    private fun parseSpotByColor(input: String): Command? {
+        return "^spot_by_color\\s+(?<color>\\w+)$".toRegex().matchEntire(input)?.let {
+            CommandSpotByColor(
+                color = it.groups["color"]!!.value,
+            )
+        }
+    }
+
+    private fun parseSpotByReg(input: String): Command? {
+        return "^spot_by_reg\\s+(?<regNumber>[\\w-]+)$".toRegex().matchEntire(input)?.let {
+            CommandSpotByReg(
+                regNumber = it.groups["regNumber"]!!.value,
+            )
         }
     }
 }

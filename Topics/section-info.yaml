@@ -5,3 +5,9 @@ content:
 - Hierarchy of exceptions
 - Taming exceptions
 - The try-catch statement
+- Nullable and non-nullable types
+- Null safety
+- Type system
+- Inheritance
+- toString()
+- Data class
